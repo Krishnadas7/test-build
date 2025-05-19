@@ -24,27 +24,20 @@ jobs:
             iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
           } else {
             Write-Host "Chocolatey already installed"
-          }
 
       - name: Install Visual Studio Build Tools with C++ workload
         shell: powershell
         run: |
-          choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
-
-      - name: Install GTK Runtime for Windows (Required for Canvas)
-        shell: powershell
-        run: |
-          choco install gtk-runtime -y
+          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
 
       - name: Verify cl.exe is available
         shell: powershell
         run: |
-          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
+          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
           if (Test-Path $vsDevCmd) {
             & cmd /c "`"$vsDevCmd`" && cl.exe"
           } else {
             Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
-          }
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -54,5 +47,8 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      - name: Build and package Electron app for Windows
-        run: npm run dist:win
+      - name: Build Electron App
+        run: npm run build
+
+      - name: Package Electron App
+        run: npx electron-builder --win --x64
