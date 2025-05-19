@@ -1,0 +1,76 @@
+/* General ruler container */
+.ruler-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* Ruler styles */
+.ruler {
+    position: relative;
+    background-color: #f4f4f4;
+    border: 1px solid #ccc;
+}
+
+/* Horizontal ruler */
+.horizontal-ruler {
+    width: 100%;
+    height: 30px;
+}
+
+.vertical-ruler {
+    height: 100%;
+    width: 30px;
+}
+
+/* Tick marks */
+.tick {
+    position: absolute;
+    background-color: #000;
+}
+
+.horizontal .tick {
+    width: 1px;
+}
+
+.vertical .tick {
+    height: 1px;
+}
+
+/* Full inch ticks */
+.full-inch {
+    border-left: 2px solid black;
+}
+
+.vertical .full-inch {
+    border-top: 2px solid black;
+}
+
+/* Half-inch ticks */
+.half-inch {
+    background-color: #666;
+    height: 60%;
+}
+
+.horizontal .half-inch {
+    height: 60%;
+}
+
+.vertical .half-inch {
+    width: 60%;
+}
+
+/* Labels */
+.inch-label {
+    position: absolute;
+    font-size: 12px;
+}
+
+.horizontal .inch-label {
+    transform: translateX(-50%);
+}
+
+.vertical .inch-label {
+    transform: translateY(-50%);
+}

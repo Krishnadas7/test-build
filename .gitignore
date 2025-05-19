@@ -1,0 +1,30 @@
+### dotenv ###
+.env
+
+# Dependency directories
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# dotenv environment variable files
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+.env
+
+# Typescript build / generate output
+dist
+react-dist
+electron-dist
+
+# lock files
+package-lock.json
+yarn.lock
