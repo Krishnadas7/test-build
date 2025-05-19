@@ -1,3 +1,4 @@
+
 name: Electron Build
 
 on:
@@ -12,53 +13,9 @@ jobs:
   build-electron:
     runs-on: windows-latest
     
-    env:
-      # Environment variables optimized for Electron + React app
-      ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: true
-      NODE_OPTIONS: --max-old-space-size=8192
-      
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Install Chocolatey (if not already installed)
-        shell: powershell
-        run: |
-          if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
-            Set-ExecutionPolicy Bypass -Scope Process -Force
-            iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-          } else {
-            Write-Host "Chocolatey already installed"
-          }
-
-      - name: Install Visual Studio Build Tools with C++ workload
-        shell: powershell
-        run: |
-          choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
-
-      - name: Setup Developer Command Prompt
-        shell: powershell
-        run: |
-          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
-          if (Test-Path $vsDevCmd) {
-            Write-Host "Found VS Developer Command Prompt at $vsDevCmd"
-            # Create a script that will be sourced later
-            "@echo off" | Out-File -FilePath "$env:GITHUB_WORKSPACE\vsdevcmd.bat" -Encoding ascii
-            "call `"$vsDevCmd`" -arch=x64" | Out-File -FilePath "$env:GITHUB_WORKSPACE\vsdevcmd.bat" -Encoding ascii -Append
-          } else {
-            Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
-            exit 1
-          }
-
-      - name: Install GTK runtime (for fabric.js and canvas dependencies)
-        shell: powershell
-        run: |
-          Invoke-WebRequest -Uri https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2023-04-04/gtk3-runtime-3.24.34-2023-04-04-ts-win64.exe -OutFile gtk3-runtime.exe
-          Start-Process -FilePath .\gtk3-runtime.exe -ArgumentList "/S" -Wait
-          # Add GTK bin folder to PATH for this session
-          $env:PATH += ";C:\Program Files\GTK3-Runtime Win64\bin"
-          echo "C:\Program Files\GTK3-Runtime Win64\bin" >> $env:GITHUB_PATH
-          echo "GTK runtime installed and PATH updated"
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -66,71 +23,18 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Configure NPM
-        run: |
-          npm config set msvs_version 2019
-          npm config set python python3
-          npm config set progress false
-
-      # Prebuild step to fix potential issues with native modules like fabric.js
-      - name: Prebuild Configuration
-        shell: cmd
-        run: |
-          call %GITHUB_WORKSPACE%\vsdevcmd.bat
-          set VCTargetsPath=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Microsoft\VC\v160
-          set PATH=%PATH%;C:\Program Files\GTK3-Runtime Win64\bin
-          npm config list
-
       - name: Install dependencies
-        shell: cmd
         run: |
-          call %GITHUB_WORKSPACE%\vsdevcmd.bat
-          set PATH=%PATH%;C:\Program Files\GTK3-Runtime Win64\bin
           npm install --verbose
-
-      - name: Check Environment and Dependencies
-        shell: powershell
-        run: |
-          Write-Host "Node version: $(node -v)"
-          Write-Host "NPM version: $(npm -v)"
-          Write-Host "Electron version: $(npx electron --version)"
-          Write-Host "TypeScript version: $(npx tsc --version)"
-          
-          # Check if fabric.js installed correctly
-          if (Test-Path "node_modules/fabric") {
-            Write-Host "✅ fabric.js installed correctly"
-          } else {
-            Write-Host "❌ fabric.js not found in node_modules"
-          }
+          npm install --global windows-build-tools
 
       - name: Build TypeScript and Vite App
-        shell: cmd
         run: |
-          call %GITHUB_WORKSPACE%\vsdevcmd.bat
-          set PATH=%PATH%;C:\Program Files\GTK3-Runtime Win64\bin
           npm run transpile:electron
           npm run build
 
       - name: Build Electron App for Windows
-        shell: cmd
-        env:
-          PATH: ${{ env.PATH }};C:\Program Files\GTK3-Runtime Win64\bin
-          GYP_MSVS_VERSION: 2019
-        run: |
-          call %GITHUB_WORKSPACE%\vsdevcmd.bat
-          set PATH=%PATH%;C:\Program Files\GTK3-Runtime Win64\bin
-          npm run dist:win
-
-      - name: Check Build Output
-        shell: powershell
-        run: |
-          if (Test-Path "release") {
-            Write-Host "✅ Build output directory exists"
-            Get-ChildItem -Path "release" -Recurse | Select-Object FullName, Length | Format-Table -AutoSize
-          } else {
-            Write-Host "❌ Build output directory not found"
-            exit 1
-          }
+        run: npm run dist:win
 
       - name: Upload Windows Build
         uses: actions/upload-artifact@v4
@@ -143,4 +47,3 @@ jobs:
         with:
           name: full-release
           path: release/
-          retention-days: 5
