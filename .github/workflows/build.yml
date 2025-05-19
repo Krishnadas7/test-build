@@ -31,6 +31,11 @@ jobs:
         run: |
           choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
 
+      - name: Install GTK Runtime for Windows (Required for Canvas)
+        shell: powershell
+        run: |
+          choco install gtk-runtime -y
+
       - name: Verify cl.exe is available
         shell: powershell
         run: |
@@ -40,11 +45,6 @@ jobs:
           } else {
             Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
           }
-
-      - name: Install GTK runtime (for canvas native dependencies)
-        shell: powershell
-        run: |
-          winget install -e --id TMD.GTK
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
