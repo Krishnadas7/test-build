@@ -135,13 +135,13 @@ jobs:
           }
 
       - name: Upload Windows Build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows-exe
           path: release/*.exe
 
       - name: Upload Full Release Folder
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: full-release
           path: release/
