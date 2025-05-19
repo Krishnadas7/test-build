@@ -22,8 +22,8 @@ jobs:
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Set-ExecutionPolicy Bypass -Scope Process -Force
             iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-          } else {
-            Write-Host "Chocolatey already installed"
+          }
+          Write-Host "Chocolatey is installed"
 
       - name: Install Visual Studio Build Tools with C++ workload
         shell: powershell
