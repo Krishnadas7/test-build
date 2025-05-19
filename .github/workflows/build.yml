@@ -1,0 +1,53 @@
+name: Electron Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-electron:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Chocolatey (if not already installed)
+        shell: powershell
+        run: |
+          if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+          } else {
+            Write-Host "Chocolatey already installed"
+          }
+
+      - name: Install Visual Studio Build Tools with C++ workload
+        shell: powershell
+        run: |
+          choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
+
+      - name: Verify cl.exe is available
+        shell: powershell
+        run: |
+          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
+          if (Test-Path $vsDevCmd) {
+            & cmd /c "`"$vsDevCmd`" && cl.exe"
+          } else {
+            Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
+          }
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'  # or your required version
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
