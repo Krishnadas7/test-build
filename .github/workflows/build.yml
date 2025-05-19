@@ -44,11 +44,7 @@ jobs:
       - name: Install GTK runtime (for canvas native dependencies)
         shell: powershell
         run: |
-          Invoke-WebRequest -Uri https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2023-04-04/gtk3-runtime-3.24.34-2023-04-04-ts-win64.exe -OutFile gtk3-runtime.exe
-          Start-Process -FilePath .\gtk3-runtime.exe -ArgumentList "/S" -Wait
-          # Add GTK bin folder to PATH for this session
-          $env:PATH += ";C:\Program Files\GTK3-Runtime Win64\bin"
-          echo "GTK runtime installed and PATH updated"
+          winget install -e --id TMD.GTK
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -59,7 +55,4 @@ jobs:
         run: npm install
 
       - name: Build and package Electron app for Windows
-        shell: powershell
-        env:
-          PATH: ${{ env.PATH }};"C:\Program Files\GTK3-Runtime Win64\bin"
         run: npm run dist:win
