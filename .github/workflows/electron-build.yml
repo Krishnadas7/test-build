@@ -43,10 +43,8 @@ jobs:
           if (Test-Path $vsDevCmd) {
             Write-Host "Found VS Developer Command Prompt at $vsDevCmd"
             # Create a script that will be sourced later
-            @"
-            @echo off
-            call "$vsDevCmd" -arch=x64
-            "@ | Out-File -FilePath "$env:GITHUB_WORKSPACE\vsdevcmd.bat" -Encoding ascii
+            "@echo off" | Out-File -FilePath "$env:GITHUB_WORKSPACE\vsdevcmd.bat" -Encoding ascii
+            "call `"$vsDevCmd`" -arch=x64" | Out-File -FilePath "$env:GITHUB_WORKSPACE\vsdevcmd.bat" -Encoding ascii -Append
           } else {
             Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
             exit 1
