@@ -31,26 +31,18 @@ jobs:
           npm config set python python3
           npm install -g node-gyp
 
-      # === ADD GTK Runtime Installation ===
-      - name: Download and Install GTK Runtime
+      - name: Install GTK
         shell: powershell
         run: |
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           Invoke-WebRequest -Uri "https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2023-03-10/gtk3-runtime-3.24.34-2023-03-10-ts-win64.exe" -OutFile "gtk3-runtime.exe"
-          Start-Process -FilePath "./gtk3-runtime.exe" -ArgumentList "/S" -Wait
+          Start-Process -FilePath ".\gtk3-runtime.exe" -ArgumentList "/silent" -NoNewWindow -Wait
 
-      - name: Set GTK Environment Variables
+      - name: Set GTK Path
         shell: powershell
         run: |
-          $env:GTK_ROOT="C:\Program Files\GTK3-Runtime Win64"
-          $env:PATH = "$env:GTK_ROOT\bin;$env:PATH"
-          $env:PKG_CONFIG_PATH = "$env:GTK_ROOT\lib\pkgconfig"
-          $env:GTK_INCLUDE_DIR = "$env:GTK_ROOT\include"
-          $env:GTK_LIB_DIR = "$env:GTK_ROOT\lib"
-          Write-Host "GTK_ROOT set to $env:GTK_ROOT"
-          # Check if cairo.h exists
-          if (-Not (Test-Path "$env:GTK_INCLUDE_DIR\cairo\cairo.h")) {
-            Write-Error "cairo.h not found! GTK runtime installation might have failed."
-          }
+          $env:Path += ";C:\Program Files\GTK3-Runtime Win64\bin"
+          echo "GTK_PATH=C:\Program Files\GTK3-Runtime Win64\bin" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm install
