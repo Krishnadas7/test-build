@@ -13,59 +13,53 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # ✅ Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ✅ Install Chocolatey (if not already installed)
-      - name: Install Chocolatey
+      - name: Install Chocolatey (if not already installed)
         shell: powershell
         run: |
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Set-ExecutionPolicy Bypass -Scope Process -Force
             iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
           } else {
-            Write-Host "✅ Chocolatey already installed"
+            Write-Host "Chocolatey already installed"
+          }
 
-      # ✅ Install Visual Studio Build Tools with C++ workload
-      - name: Install Visual Studio Build Tools
+      - name: Install Visual Studio Build Tools with C++ workload
         shell: powershell
         run: |
-          choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
-          Write-Host "✅ Visual Studio Build Tools installed"
+          choco install visualstudio2019buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
 
-      # ✅ Verify cl.exe is available
       - name: Verify cl.exe is available
         shell: powershell
         run: |
-          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\Common7\Tools\VsDevCmd.bat"
+          $vsDevCmd = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2019\BuildTools\Common7\Tools\VsDevCmd.bat"
           if (Test-Path $vsDevCmd) {
             & cmd /c "`"$vsDevCmd`" && cl.exe"
           } else {
-            Write-Error "❌ VS Developer Command Prompt batch file not found at $vsDevCmd"
+            Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
+          }
 
-      # ✅ Setup Node.js
+      - name: Install GTK runtime (for canvas native dependencies)
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases/download/2023-04-04/gtk3-runtime-3.24.34-2023-04-04-ts-win64.exe -OutFile gtk3-runtime.exe
+          Start-Process -FilePath .\gtk3-runtime.exe -ArgumentList "/S" -Wait
+          # Add GTK bin folder to PATH for this session
+          $env:PATH += ";C:\Program Files\GTK3-Runtime Win64\bin"
+          echo "GTK runtime installed and PATH updated"
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      # ✅ Install npm dependencies
       - name: Install npm dependencies
         run: npm install
 
-      # ✅ Build the Electron App
-      - name: Build Electron App
-        run: npm run build
-
-      # ✅ Package the Electron App
-      - name: Package Electron App
+      - name: Build and package Electron app for Windows
+        shell: powershell
+        env:
+          PATH: ${{ env.PATH }};"C:\Program Files\GTK3-Runtime Win64\bin"
         run: npm run dist:win
-
-      # ✅ Upload build artifacts (optional)
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: tint-care-app
-          path: release/**/*
-
