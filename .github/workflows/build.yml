@@ -10,26 +10,40 @@ on:
 
 jobs:
   build-electron:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
+      # ✅ Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Chocolatey (if not already installed)
+      # ✅ Set up Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # ✅ Install Chocolatey (if not already installed)
+      - name: Install Chocolatey
         shell: powershell
         run: |
           if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
             Set-ExecutionPolicy Bypass -Scope Process -Force
             iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
           }
-          Write-Host "Chocolatey is installed"
+          Write-Host "✅ Chocolatey is installed"
 
+      # ✅ Install Visual Studio Build Tools
       - name: Install Visual Studio Build Tools with C++ workload
         shell: powershell
+        continue-on-error: true
+        env:
+          ChocolateyRestartDetector: "false"
         run: |
           choco install visualstudio2022buildtools --package-parameters "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended --passive --norestart" -y
+          Write-Host "✅ Visual Studio Build Tools installed"
 
+      # ✅ Verify cl.exe is available
       - name: Verify cl.exe is available
         shell: powershell
         run: |
@@ -37,18 +51,25 @@ jobs:
           if (Test-Path $vsDevCmd) {
             & cmd /c "`"$vsDevCmd`" && cl.exe"
           } else {
-            Write-Error "VS Developer Command Prompt batch file not found at $vsDevCmd"
+            Write-Error "❌ VS Developer Command Prompt batch file not found at $vsDevCmd"
+          }
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
+      # ✅ Install npm dependencies
       - name: Install npm dependencies
         run: npm install
 
+      # ✅ Build the Electron app
       - name: Build Electron App
         run: npm run build
 
+      # ✅ Package the Electron app
       - name: Package Electron App
         run: npx electron-builder --win --x64
+
+      # ✅ Upload build artifacts (optional)
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: tint-care-app
+          path: release/**/*
+
