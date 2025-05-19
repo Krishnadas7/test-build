@@ -11,7 +11,7 @@ on:
 jobs:
   build-electron:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,41 +20,34 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          # Removed cache option
 
-      - name: Install global dependencies
-        run: npm install -g node-gyp windows-build-tools@4.0.0 --vs2015 --production
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.0.2
 
-      - name: Install project dependencies
-        run: npm install --no-package-lock
+      - name: Install Required Build Tools
+        shell: powershell
+        run: |
+          npm config set msvs_version 2019
+          npm config set python python3
+          npm install -g node-gyp
 
-      - name: Build TypeScript and Vite App
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Application
         run: |
           npm run transpile:electron
           npm run build
-
-      - name: Build Electron App for Windows
-        run: npm run dist:win
-
-      - name: List release directory
-        shell: powershell
-        run: |
-          if (Test-Path "release") {
-            Get-ChildItem -Path "release" -Recurse | ForEach-Object { $_.FullName }
-          } else {
-            Write-Error "Release directory not found"
-          }
+          npm run dist:win
 
       - name: Upload Windows Installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: |
-            release/*.exe
-            release/**/*.exe
+          path: release/*.exe
 
-      - name: Upload Full Release Folder
+      - name: Upload Complete Release
         uses: actions/upload-artifact@v4
         with:
-          name: full-release
+          name: complete-release
           path: release/
